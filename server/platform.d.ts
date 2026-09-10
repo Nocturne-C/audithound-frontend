@@ -1,0 +1,13 @@
+export declare const AUDIT_ROOT: string;
+export declare const OUTPUT_ROOT: string;
+export declare const WORKSPACE_ROOT: string;
+export declare const STATE_ROOT: string;
+export declare const JOBS_ROOT: string;
+export declare const SOURCES_ROOT: string;
+export declare const UPLOADS_ROOT: string;
+export declare const WORKFLOWS_ROOT: string;
+export declare const WORKERS_ROOT: string;
+export declare const WORKER_RESULTS_ROOT: string;
+export declare const WORKER_REGISTRY_FILE: string;
+export declare const CONFIG_FILE: string;
+export declare const DEFAULT_JOB_LOG_TAIL = 200;

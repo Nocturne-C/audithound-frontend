@@ -1,0 +1,210 @@
+{
+ "schemaVersion": 1,
+ "id": "general-convergence",
+ "name": "General Convergence",
+ "description": "Runs the full-scope convergence loop, inserts optional focused workers, and hands merged findings directly to round summary and human review.",
+ "version": 3,
+ "builtIn": true,
+ "executable": true,
+ "tags": [
+  "default",
+  "general",
+  "full-scope",
+  "adaptive-focus",
+  "merge-summary",
+  "review-gated"
+ ],
+ "updatedAt": "2026-07-31T00:00:00.000Z",
+ "nodes": [
+  {
+   "id": "scope-contract",
+   "kind": "scope",
+   "title": "Scope contract",
+   "description": "Freeze the repository snapshot, direct audit scope, exclusions, runtime configuration, and target identity.",
+   "dependsOn": [],
+   "inputMode": "scope",
+   "prompt": "",
+   "model": null,
+   "reasoningEffort": null,
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "scope.v2",
+   "postProcessors": [
+    "target-fingerprint"
+   ],
+   "position": {
+    "column": 0,
+    "row": 0
+   }
+  },
+  {
+   "id": "source-context",
+   "kind": "map",
+   "title": "Source context",
+   "description": "Record the in-scope source inventory for auditors and reviewers without ranking, partitioning, or constraining the investigation.",
+   "dependsOn": [
+    "scope-contract"
+   ],
+   "inputMode": "scope",
+   "prompt": "Record the in-scope source files and declarations as navigation context only. Do not rank files or prescribe audit questions.",
+   "model": null,
+   "reasoningEffort": null,
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "source-context.v1",
+   "postProcessors": [
+    "source-index"
+   ],
+   "position": {
+    "column": 1,
+    "row": 0
+   }
+  },
+  {
+   "id": "independent-general-audit",
+   "kind": "investigate",
+   "title": "Independent general audit",
+   "description": "Give every isolated worker the complete audit scope and let it independently identify the most important security questions.",
+   "dependsOn": [
+    "source-context"
+   ],
+   "inputMode": "scope",
+   "prompt": "",
+   "model": null,
+   "reasoningEffort": "xhigh",
+   "concurrency": 4,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "finding-candidate.v2",
+   "postProcessors": [
+    "candidate-schema"
+   ],
+   "position": {
+    "column": 2,
+    "row": 0
+   }
+  },
+  {
+   "id": "adaptive-focus",
+   "kind": "focus",
+   "title": "Adaptive focus",
+   "description": "Optionally insert narrow workers from prior merged evidence, summary gaps, or an explicit reviewer request without narrowing the general audit loop.",
+   "dependsOn": [
+    "independent-general-audit"
+   ],
+   "inputMode": "each",
+   "prompt": "Investigate only the assigned evidence-driven objective. Falsify the premise when unsupported; otherwise return source-grounded evidence that materially changes the canonical record.",
+   "model": null,
+   "reasoningEffort": "xhigh",
+   "concurrency": 2,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "focus-result.v1",
+   "postProcessors": [
+    "focus-lineage"
+   ],
+   "position": {
+    "column": 3,
+    "row": 0
+   }
+  },
+  {
+   "id": "canonical-findings",
+   "kind": "normalize",
+   "title": "Canonical candidates",
+   "description": "Consolidate overlapping findings, reconstruct useful signals against source, retain provenance, and prepare the round summary.",
+   "dependsOn": [
+    "independent-general-audit",
+    "adaptive-focus"
+   ],
+   "inputMode": "all",
+   "prompt": "Normalize the workers' free-form audit reports into canonical findings. Preserve plausible low-confidence signals when the source supports them.",
+   "model": null,
+   "reasoningEffort": "xhigh",
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "canonical-finding.v2",
+   "postProcessors": [
+    "candidate-schema"
+   ],
+   "position": {
+    "column": 4,
+    "row": 0
+   }
+  },
+  {
+   "id": "human-review",
+   "kind": "review",
+   "title": "Human review",
+   "description": "Require explicit reviewer decisions for validity, impact, duplicates, remediation, and risk acceptance.",
+   "dependsOn": [
+    "canonical-findings"
+   ],
+   "inputMode": "each",
+   "prompt": "",
+   "model": null,
+   "reasoningEffort": null,
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": true,
+   "outputContract": "review-decision.v2",
+   "postProcessors": [],
+   "position": {
+    "column": 5,
+    "row": 0
+   }
+  },
+  {
+   "id": "regression-baseline",
+   "kind": "regression",
+   "title": "Regression baseline",
+   "description": "Compare stable root-cause fingerprints and evidence revisions across target-scoped runs.",
+   "dependsOn": [
+    "human-review"
+   ],
+   "inputMode": "all",
+   "prompt": "",
+   "model": null,
+   "reasoningEffort": null,
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "regression-diff.v2",
+   "postProcessors": [
+    "patched-since",
+    "reopened-finding"
+   ],
+   "position": {
+    "column": 6,
+    "row": 0
+   }
+  },
+  {
+   "id": "delivery",
+   "kind": "report",
+   "title": "Delivery package",
+   "description": "Produce reviewer-approved reports, machine-readable exports, and remediation handoff artifacts.",
+   "dependsOn": [
+    "regression-baseline"
+   ],
+   "inputMode": "all",
+   "prompt": "",
+   "model": null,
+   "reasoningEffort": null,
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "delivery-package.v2",
+   "postProcessors": [
+    "final-report"
+   ],
+   "position": {
+    "column": 7,
+    "row": 0
+   }
+  }
+ ]
+}

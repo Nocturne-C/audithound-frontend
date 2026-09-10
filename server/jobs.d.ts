@@ -1,0 +1,92 @@
+import { type JobDefaults } from "./config";
+export type JobStatus = "queued" | "preparing" | "running" | "paused" | "rate_limited" | "review_ready" | "succeeded" | "failed" | "cancelled";
+export type ResumeStage = "scope" | "map" | "investigate" | "focus" | "normalize" | "summary" | "review" | "regression" | "report";
+export type JobSource = {
+    type: "github";
+    repoUrl: string;
+    ref: string | null;
+} | {
+    type: "upload";
+    originalName: string;
+    storedName: string;
+    sizeBytes: number;
+} | {
+    type: "local";
+    path: string;
+};
+export type JobRecord = {
+    id: string;
+    name: string;
+    projectId: string;
+    engagementId: string;
+    status: JobStatus;
+    stage: string;
+    createdAt: string;
+    updatedAt: string;
+    startedAt: string | null;
+    finishedAt: string | null;
+    source: JobSource;
+    settings: JobDefaults;
+    workspacePath: string | null;
+    outputDir: string;
+    runId: string | null;
+    exitCode: number | null;
+    error: string | null;
+    logPath: string;
+    cancelRequested: boolean;
+    resumeRequested: boolean;
+    resumeFromStage: ResumeStage | null;
+    resumeRound: number | null;
+    assignedWorkerId: string | null;
+    leaseId: string | null;
+    leaseExpiresAt: string | null;
+    attempt: number;
+};
+export type JobDetail = JobRecord & {
+    logTail: string;
+};
+export declare class JobManager {
+    private readonly jobs;
+    private readonly runtime;
+    private initPromise;
+    private queuePromise;
+    private leasePromise;
+    listJobs(): Promise<JobRecord[]>;
+    getJob(id: string, tailLines?: number): Promise<JobDetail | null>;
+    markDelivered(runId: string): Promise<JobRecord>;
+    markReviewReady(runId: string): Promise<JobRecord>;
+    findJobByRunId(runId: string): Promise<JobRecord>;
+    continueWithFocus(runId: string, additionalRounds?: number): Promise<JobRecord>;
+    resumeFromStage(runId: string, stage: ResumeStage, requestedRound?: number): Promise<JobRecord>;
+    private adoptExistingRun;
+    createGithubJob(input: unknown): Promise<JobRecord>;
+    createUploadJob(formData: FormData): Promise<JobRecord>;
+    leaseWorkerJob(workerId: string, pool: string): Promise<JobRecord>;
+    heartbeatWorkerJob(workerId: string, jobId: string, leaseId: string, stage?: string): Promise<JobRecord>;
+    appendWorkerLog(workerId: string, jobId: string, leaseId: string, lines: string): Promise<JobRecord>;
+    getWorkerSourceArchive(workerId: string, jobId: string, leaseId: string): Promise<{
+        path: string;
+        name: string;
+    }>;
+    createWorkerResumeArchive(workerId: string, jobId: string, leaseId: string): Promise<string>;
+    installWorkerResult(workerId: string, jobId: string, leaseId: string, archive: unknown): Promise<JobRecord>;
+    installWorkerWorkspace(workerId: string, jobId: string, leaseId: string, archive: unknown): Promise<JobRecord>;
+    completeWorkerJob(workerId: string, jobId: string, leaseId: string, exitCode?: number): Promise<JobRecord>;
+    failWorkerJob(workerId: string, jobId: string, leaseId: string, error: string, exitCode?: number | null): Promise<JobRecord>;
+    cancelJob(id: string): Promise<JobRecord>;
+    pauseJob(id: string): Promise<JobRecord>;
+    resumeJob(id: string): Promise<JobRecord>;
+    private assertWorkerLease;
+    private recoverExpiredWorkerLeases;
+    private init;
+    private initialize;
+    private kickQueue;
+    private executeJob;
+    private prepareWorkspace;
+    private runLoggedCommand;
+    private appendLog;
+    private updateJob;
+    private persistJob;
+    private ensureNotCancelled;
+}
+export declare function getJobManager(): JobManager;

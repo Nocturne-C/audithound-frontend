@@ -1,0 +1,185 @@
+{
+ "schemaVersion": 1,
+ "id": "focused-convergence",
+ "name": "Focused Fan-out",
+ "description": "Partitions the mapped source context into explicit worker assignments before merge, summary, and reviewer-gated delivery.",
+ "version": 3,
+ "builtIn": true,
+ "executable": true,
+ "tags": [
+  "focused",
+  "legacy",
+  "source-fan-out",
+  "merge-summary",
+  "review-gated"
+ ],
+ "updatedAt": "2026-07-31T00:00:00.000Z",
+ "nodes": [
+  {
+   "id": "scope-contract",
+   "kind": "scope",
+   "title": "Scope contract",
+   "description": "Freeze the repository snapshot, direct audit scope, exclusions, runtime configuration, and target identity.",
+   "dependsOn": [],
+   "inputMode": "scope",
+   "prompt": "",
+   "model": null,
+   "reasoningEffort": null,
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "scope.v2",
+   "postProcessors": [
+    "target-fingerprint"
+   ],
+   "position": {
+    "column": 0,
+    "row": 0
+   }
+  },
+  {
+   "id": "source-context",
+   "kind": "map",
+   "title": "Source assignments",
+   "description": "Partition the explicit source inventory into narrow worker assignments for this opt-in workflow.",
+   "dependsOn": [
+    "scope-contract"
+   ],
+   "inputMode": "scope",
+   "prompt": "Partition the source inventory into concrete file-level assignments without claiming audit coverage.",
+   "model": null,
+   "reasoningEffort": null,
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "source-assignments.v1",
+   "postProcessors": [
+    "source-index",
+    "task-planner"
+   ],
+   "position": {
+    "column": 1,
+    "row": 0
+   }
+  },
+  {
+   "id": "focused-investigation",
+   "kind": "investigate",
+   "title": "Focused investigation",
+   "description": "Assign one narrow task per source object and retain every task input, output, and agent attribution.",
+   "dependsOn": [
+    "source-context"
+   ],
+   "inputMode": "each",
+   "prompt": "Investigate only the assigned source object. Return distinct source-grounded hypotheses and follow dependencies only as needed.",
+   "model": null,
+   "reasoningEffort": "high",
+   "concurrency": 4,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "finding-candidate.v2",
+   "postProcessors": [
+    "candidate-schema"
+   ],
+   "position": {
+    "column": 2,
+    "row": 0
+   }
+  },
+  {
+   "id": "canonical-findings",
+   "kind": "normalize",
+   "title": "Canonical candidates",
+   "description": "Merge identical candidate root causes, retain provenance, and prepare the round summary.",
+   "dependsOn": [
+    "focused-investigation"
+   ],
+   "inputMode": "all",
+   "prompt": "Merge only identical root causes. Never invent a finding that is absent from the discovery records.",
+   "model": null,
+   "reasoningEffort": "high",
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "canonical-finding.v2",
+   "postProcessors": [
+    "candidate-schema"
+   ],
+   "position": {
+    "column": 3,
+    "row": 0
+   }
+  },
+  {
+   "id": "human-review",
+   "kind": "review",
+   "title": "Human review",
+   "description": "Require explicit reviewer decisions for validity, impact, duplicates, remediation, and risk acceptance.",
+   "dependsOn": [
+    "canonical-findings"
+   ],
+   "inputMode": "each",
+   "prompt": "",
+   "model": null,
+   "reasoningEffort": null,
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": true,
+   "outputContract": "review-decision.v2",
+   "postProcessors": [],
+   "position": {
+    "column": 4,
+    "row": 0
+   }
+  },
+  {
+   "id": "regression-baseline",
+   "kind": "regression",
+   "title": "Regression baseline",
+   "description": "Compare stable root-cause fingerprints and evidence revisions across target-scoped runs.",
+   "dependsOn": [
+    "human-review"
+   ],
+   "inputMode": "all",
+   "prompt": "",
+   "model": null,
+   "reasoningEffort": null,
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "regression-diff.v2",
+   "postProcessors": [
+    "patched-since",
+    "reopened-finding"
+   ],
+   "position": {
+    "column": 5,
+    "row": 0
+   }
+  },
+  {
+   "id": "delivery",
+   "kind": "report",
+   "title": "Delivery package",
+   "description": "Produce reviewer-approved reports, machine-readable exports, and remediation handoff artifacts.",
+   "dependsOn": [
+    "regression-baseline"
+   ],
+   "inputMode": "all",
+   "prompt": "",
+   "model": null,
+   "reasoningEffort": null,
+   "concurrency": 1,
+   "repeat": 1,
+   "requiresHumanGate": false,
+   "outputContract": "delivery-package.v2",
+   "postProcessors": [
+    "final-report"
+   ],
+   "position": {
+    "column": 6,
+    "row": 0
+   }
+  }
+ ]
+}

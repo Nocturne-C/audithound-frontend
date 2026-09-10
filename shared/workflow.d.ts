@@ -1,0 +1,141 @@
+export declare const WORKFLOW_NODE_KINDS: readonly ["scope", "map", "investigate", "focus", "normalize", "review", "regression", "report"];
+export type WorkflowNodeKind = (typeof WORKFLOW_NODE_KINDS)[number];
+export type WorkflowInputMode = "scope" | "each" | "all";
+export type WorkflowRunStatus = "pending" | "running" | "paused" | "awaiting_review" | "completed" | "failed" | "cancelled";
+export type WorkflowNodeStatus = "blocked" | "pending" | "running" | "waiting" | "completed" | "failed" | "skipped";
+export type WorkflowNodePosition = {
+    column: number;
+    row: number;
+};
+export type WorkflowNodeDefinition = {
+    id: string;
+    kind: WorkflowNodeKind;
+    title: string;
+    description: string;
+    dependsOn: string[];
+    inputMode: WorkflowInputMode;
+    prompt: string;
+    model: string | null;
+    reasoningEffort: "minimal" | "low" | "medium" | "high" | "xhigh" | null;
+    concurrency: number;
+    repeat: number;
+    requiresHumanGate: boolean;
+    outputContract: string;
+    postProcessors: string[];
+    position: WorkflowNodePosition;
+};
+export type WorkflowDefinition = {
+    schemaVersion: 1;
+    id: string;
+    name: string;
+    description: string;
+    version: number;
+    builtIn: boolean;
+    executable: boolean;
+    tags: string[];
+    updatedAt: string;
+    nodes: WorkflowNodeDefinition[];
+};
+export type WorkflowCatalogItem = Pick<WorkflowDefinition, "id" | "name" | "description" | "version" | "builtIn" | "executable" | "tags" | "updatedAt"> & {
+    nodeCount: number;
+    workerScope: "full" | "mapped-items";
+    hasAdaptiveFocus: boolean;
+};
+export type WorkflowVersionSummary = {
+    workflowId: string;
+    version: number;
+    name: string;
+    updatedAt: string;
+    nodeCount: number;
+    current: boolean;
+    restorable: boolean;
+};
+export type WorkflowValidationIssue = {
+    level: "error" | "warning";
+    nodeId: string | null;
+    message: string;
+};
+export type WorkflowValidationResult = {
+    valid: boolean;
+    issues: WorkflowValidationIssue[];
+};
+export type WorkflowNodeExecution = {
+    nodeId: string;
+    status: WorkflowNodeStatus;
+    attempt: number;
+    startedAt: string | null;
+    finishedAt: string | null;
+    progress: number;
+    inputCount: number;
+    outputCount: number;
+    message: string;
+    artifactPaths: string[];
+};
+export type WorkflowRunSnapshot = {
+    schemaVersion: 1;
+    runId: string;
+    workflowId: string;
+    workflowVersion: number;
+    status: WorkflowRunStatus;
+    targetPath: string | null;
+    startedAt: string | null;
+    updatedAt: string;
+    finishedAt: string | null;
+    currentNodeId: string | null;
+    nodes: WorkflowNodeExecution[];
+};
+export type SourceFileKind = "contract" | "interface" | "library" | "script" | "test" | "source";
+export type SourceFileState = "indexed" | "assigned" | "finding";
+export type SourceFileItem = {
+    id: string;
+    path: string;
+    kind: SourceFileKind;
+    linesOfCode: number;
+    state: SourceFileState;
+    findingIds: string[];
+    symbols?: string[];
+};
+export type ScopeSnapshot = {
+    coverageMode?: "workflow-tasks" | "open-scope";
+    scopeFiles: number;
+    assignedFiles: number;
+    filesWithFindings: number;
+    totalFindings: number;
+    assignmentCoverage: number;
+    plannedTasks?: number;
+    completedTasks?: number;
+};
+export type BenchmarkTarget = {
+    id: string;
+    title: string;
+    runCount: number;
+    latestRunId: string;
+    previousRunId: string | null;
+    latestFindings: number;
+    findingDelta: number | null;
+    converged: boolean;
+    reviewed: number;
+    confirmed: number;
+    reviewRate: number;
+};
+export type BenchmarkOverview = {
+    generatedAt: string;
+    totalRuns: number;
+    convergedRuns: number;
+    totalFindings: number;
+    confirmedFindings: number;
+    reviewedFindings: number;
+    reproducibleFindings: number;
+    averageRounds: number;
+    precision?: number | null;
+    recall?: number | null;
+    falsePositiveRate?: number | null;
+    falseNegativeRate?: number | null;
+    evaluatedCases?: number;
+    targets: BenchmarkTarget[];
+};
+export declare const DEFAULT_WORKFLOW_ID = "general-convergence";
+export declare const DEFAULT_WORKFLOW: WorkflowDefinition;
+export declare const FOCUSED_WORKFLOW: WorkflowDefinition;
+export declare const BUILT_IN_WORKFLOWS: WorkflowDefinition[];
+export declare const BUILT_IN_WORKFLOW_IDS: Set<string>;
